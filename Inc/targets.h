@@ -2412,6 +2412,22 @@
 /*******************************   G071 Targets
  * *********************************/
 
+#ifdef ESC_FPV_G071
+#define FILE_NAME "ESC_FPV_G071"
+#define FIRMWARE_NAME "ESC FPV G071"
+#define DEAD_TIME 60
+#define MILLIVOLT_PER_AMP 1
+#define CURRENT_OFFSET 0
+#define HARDWARE_GROUP_G0_ESC_FPV
+#define NO_EXTERNAL_ADC
+#define DISABLE_LOW_RPM_THROTTLE_LIMIT
+#define GATE_DRIVER_ENABLE_PORT GPIOA
+#define GATE_DRIVER_ENABLE_PIN LL_GPIO_PIN_6
+#define GATE_DRIVER_WAKE_DELAY_MS 2
+#define GATE_DRIVER_FAULT_PORT GPIOA
+#define GATE_DRIVER_FAULT_PIN LL_GPIO_PIN_0
+#endif
+
 #ifdef AIRBOT_PHOENIX_12S_G071
 #define FILE_NAME "AIRBOT_PHOENIX_12S_G071"
 #define FIRMWARE_NAME "PHEONIX 12S "
@@ -3603,6 +3619,42 @@
 
 /************************************* G071 Hardware Groups
  * **********************************/
+
+#ifdef HARDWARE_GROUP_G0_ESC_FPV
+
+#define MCU_G071
+#define USE_TIMER_3_CHANNEL_1
+#define INPUT_PIN LL_GPIO_PIN_4
+#define INPUT_PIN_PORT GPIOB
+#define IC_TIMER_CHANNEL LL_TIM_CHANNEL_CH1
+#define IC_TIMER_REGISTER TIM3
+#define IC_TIMER_POINTER htim3
+
+#define INPUT_DMA_CHANNEL LL_DMA_CHANNEL_1
+#define DMA_HANDLE_TYPE_DEF hdma_tim3_ch1
+#define IC_DMA_IRQ_NAME DMA1_Channel1_IRQn
+
+/* Keep every driven half-bridge paired with its schematic BEMF phase. */
+#define PHASE_A_GPIO_LOW LL_GPIO_PIN_7
+#define PHASE_A_GPIO_PORT_LOW GPIOA
+#define PHASE_A_GPIO_HIGH LL_GPIO_PIN_8
+#define PHASE_A_GPIO_PORT_HIGH GPIOA
+
+#define PHASE_B_GPIO_LOW LL_GPIO_PIN_0
+#define PHASE_B_GPIO_PORT_LOW GPIOB
+#define PHASE_B_GPIO_HIGH LL_GPIO_PIN_9
+#define PHASE_B_GPIO_PORT_HIGH GPIOA
+
+#define PHASE_C_GPIO_LOW LL_GPIO_PIN_1
+#define PHASE_C_GPIO_PORT_LOW GPIOB
+#define PHASE_C_GPIO_HIGH LL_GPIO_PIN_10
+#define PHASE_C_GPIO_PORT_HIGH GPIOA
+
+#define PHASE_A_COMP LL_COMP_INPUT_MINUS_IO2 /* PB7, BEMF_A */
+#define PHASE_B_COMP LL_COMP_INPUT_MINUS_IO1 /* PB3, BEMF_B */
+#define PHASE_C_COMP LL_COMP_INPUT_MINUS_IO3 /* PA2, BEMF_C */
+
+#endif
 
 #ifdef HARDWARE_GROUP_G0_A
 

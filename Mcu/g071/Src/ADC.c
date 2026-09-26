@@ -6,7 +6,9 @@
  */
 #include "ADC.h"
 
-#ifdef USE_ADC_INPUT
+#ifdef NO_EXTERNAL_ADC
+uint16_t ADCDataDMA[1];
+#elif defined(USE_ADC_INPUT)
 uint16_t ADCDataDMA[4];
 #else
 uint16_t ADCDataDMA[3];
@@ -23,7 +25,11 @@ extern uint16_t ADC_raw_input;
 void ADC_DMA_Callback()
 { // read dma buffer and set extern variables
 
-#ifdef USE_ADC_INPUT
+#ifdef NO_EXTERNAL_ADC
+    ADC_raw_temp = ADCDataDMA[0];
+    ADC_raw_volts = 0;
+    ADC_raw_current = 0;
+#elif defined(USE_ADC_INPUT)
     ADC_raw_temp = ADCDataDMA[3];
     ADC_raw_volts = ADCDataDMA[1] / 2;
     ADC_raw_current = ADCDataDMA[2];
@@ -48,7 +54,9 @@ void enableADC_DMA()
         (uint32_t)&ADCDataDMA, LL_DMA_DIRECTION_PERIPH_TO_MEMORY);
 
     /* Set DMA transfer size */
-#ifdef USE_ADC_INPUT
+#ifdef NO_EXTERNAL_ADC
+    LL_DMA_SetDataLength(DMA1, LL_DMA_CHANNEL_2, 1);
+#elif defined(USE_ADC_INPUT)
     LL_DMA_SetDataLength(DMA1, LL_DMA_CHANNEL_2, 4);
 #else
     LL_DMA_SetDataLength(DMA1, LL_DMA_CHANNEL_2, 3);
@@ -110,11 +118,14 @@ void ADC_Init(void)
     LL_ADC_REG_InitTypeDef ADC_REG_InitStruct = { 0 };
     LL_ADC_InitTypeDef ADC_InitStruct = { 0 };
 
+#ifndef NO_EXTERNAL_ADC
     LL_GPIO_InitTypeDef GPIO_InitStruct = { 0 };
+#endif
 
     /* Peripheral clock enable */
     LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_ADC);
 
+#ifndef NO_EXTERNAL_ADC
     LL_IOP_GRP1_EnableClock(LL_IOP_GRP1_PERIPH_GPIOA);
     /**ADC1 GPIO Configuration
     PA4   ------> ADC1_IN4
@@ -129,6 +140,7 @@ void ADC_Init(void)
     GPIO_InitStruct.Mode = LL_GPIO_MODE_ANALOG;
     GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
     LL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+#endif
 
     /* ADC1 DMA Init */
 
@@ -161,7 +173,11 @@ void ADC_Init(void)
      * Alignment and number of conversion)
      */
     ADC_REG_InitStruct.TriggerSource = LL_ADC_REG_TRIG_SOFTWARE;
+#ifdef NO_EXTERNAL_ADC
+    ADC_REG_InitStruct.SequencerLength = LL_ADC_REG_SEQ_SCAN_DISABLE;
+#else
     ADC_REG_InitStruct.SequencerLength = LL_ADC_REG_SEQ_SCAN_ENABLE_3RANKS;
+#endif
     ADC_REG_InitStruct.SequencerDiscont = LL_ADC_REG_SEQ_DISCONT_DISABLE;
     ADC_REG_InitStruct.ContinuousMode = LL_ADC_REG_CONV_SINGLE;
     ADC_REG_InitStruct.DMATransfer = LL_ADC_REG_DMA_TRANSFER_LIMITED;
@@ -184,6 +200,10 @@ void ADC_Init(void)
     ADC_InitStruct.LowPowerMode = LL_ADC_LP_MODE_NONE;
     LL_ADC_Init(ADC1, &ADC_InitStruct);
 
+#ifdef NO_EXTERNAL_ADC
+    LL_ADC_REG_SetSequencerRanks(ADC1, LL_ADC_REG_RANK_1,
+        LL_ADC_CHANNEL_TEMPSENSOR);
+#else
     LL_ADC_REG_SetSequencerRanks(ADC1, LL_ADC_REG_RANK_1, CURRENT_ADC_CHANNEL);
     LL_ADC_SetChannelSamplingTime(ADC1, CURRENT_ADC_CHANNEL,
         LL_ADC_SAMPLINGTIME_COMMON_1);
@@ -194,6 +214,7 @@ void ADC_Init(void)
 
     LL_ADC_REG_SetSequencerRanks(ADC1, LL_ADC_REG_RANK_3,
         LL_ADC_CHANNEL_TEMPSENSOR);
+#endif
     LL_ADC_SetChannelSamplingTime(ADC1, LL_ADC_CHANNEL_TEMPSENSOR,
         LL_ADC_SAMPLINGTIME_COMMON_2);
 }

@@ -801,8 +801,20 @@ void loadEEpromSettings()
         } else {
             low_rpm_level = 0;
             high_rpm_level = 0;
+            low_rpm_throttle_limit = 0;
         }
+#ifdef DISABLE_LOW_RPM_THROTTLE_LIMIT
+        /* Keep startup/ramp protection, but do not derive a duty ceiling from
+         * the configurator's 10,220-KV-limited storage field. */
+        low_rpm_throttle_limit = 0;
+#endif
     }
+#ifdef NO_EXTERNAL_ADC
+    /* There are no voltage/current sense inputs on this board. */
+    eepromBuffer.low_voltage_cut_off = 0;
+    LOW_VOLTAGE_CUTOFF = 0;
+    use_current_limit = 0;
+#endif
     reverse_speed_threshold = map(motor_kv, 300, 3000, 1000, 500);
     if (eepromBuffer.bi_direction){
       polling_mode_changeover = POLLING_MODE_THRESHOLD / 2;
@@ -1830,7 +1842,9 @@ int main(void)
         throttle_max_at_low_rpm = 1000;
         eepromBuffer.bi_direction = 1;
         eepromBuffer.use_sine_start = 0;
+#ifndef DISABLE_LOW_RPM_THROTTLE_LIMIT
         low_rpm_throttle_limit = 1;
+#endif
         eepromBuffer.variable_pwm = 0;
         eepromBuffer.brake_on_zero_throttle = 0;
         eepromBuffer.comp_pwm = 0;

@@ -9,6 +9,7 @@
 
 #include "peripherals.h"
 
+#include "functions.h"
 #include "serial_telemetry.h"
 #include "targets.h"
 
@@ -712,6 +713,28 @@ void MX_GPIO_Init(void)
     /* GPIO Ports Clock Enable */
     LL_IOP_GRP1_EnableClock(LL_IOP_GRP1_PERIPH_GPIOA);
     LL_IOP_GRP1_EnableClock(LL_IOP_GRP1_PERIPH_GPIOB);
+
+#if defined(GATE_DRIVER_ENABLE_PIN) || defined(GATE_DRIVER_FAULT_PIN)
+    LL_GPIO_InitTypeDef GPIO_InitStruct = { 0 };
+#endif
+
+#ifdef GATE_DRIVER_ENABLE_PIN
+    /* Keep the gate driver asleep until all PWM outputs are initialized. */
+    LL_GPIO_ResetOutputPin(GATE_DRIVER_ENABLE_PORT, GATE_DRIVER_ENABLE_PIN);
+    GPIO_InitStruct.Pin = GATE_DRIVER_ENABLE_PIN;
+    GPIO_InitStruct.Mode = LL_GPIO_MODE_OUTPUT;
+    GPIO_InitStruct.Speed = LL_GPIO_SPEED_FREQ_LOW;
+    GPIO_InitStruct.OutputType = LL_GPIO_OUTPUT_PUSHPULL;
+    GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
+    LL_GPIO_Init(GATE_DRIVER_ENABLE_PORT, &GPIO_InitStruct);
+#endif
+
+#ifdef GATE_DRIVER_FAULT_PIN
+    GPIO_InitStruct.Pin = GATE_DRIVER_FAULT_PIN;
+    GPIO_InitStruct.Mode = LL_GPIO_MODE_INPUT;
+    GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
+    LL_GPIO_Init(GATE_DRIVER_FAULT_PORT, &GPIO_InitStruct);
+#endif
 }
 
 void reloadWatchDogCounter() { LL_IWDG_ReloadCounter(IWDG); }
@@ -807,4 +830,12 @@ void enableCorePeripherals()
 		#ifdef USE_PULSE_OUT
 		 LL_GPIO_SetPinMode(RPM_PULSE_PORT, RPM_PULSE_PIN, LL_GPIO_MODE_OUTPUT);
 		#endif
+
+#ifdef GATE_DRIVER_ENABLE_PIN
+    /* PWM pins and comparator are now defined; wake the MP6531A. */
+    LL_GPIO_SetOutputPin(GATE_DRIVER_ENABLE_PORT, GATE_DRIVER_ENABLE_PIN);
+#ifdef GATE_DRIVER_WAKE_DELAY_MS
+    delayMillis(GATE_DRIVER_WAKE_DELAY_MS);
+#endif
+#endif
 }
